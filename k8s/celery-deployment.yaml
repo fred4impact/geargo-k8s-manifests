@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geargo-celery
+  labels:
+    app: geargo
+    component: celery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geargo
+      component: celery
+  template:
+    metadata:
+      labels:
+        app: geargo
+        component: celery
+    spec:
+      containers:
+      - name: geargo-celery
+        image: your-registry/geargo:latest
+        command: ["celery"]
+        args: ["-A", "geargo_project", "worker", "-l", "info"]
+        env:
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: DEBUG
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: SECRET_KEY
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: ALLOWED_HOSTS
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgresql:5432/$(POSTGRES_DB)"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_PASSWORD
+        - name: REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: CELERY_BROKER_URL
+          value: "redis://redis:6379/0"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://redis:6379/0"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: media-files
+          mountPath: /app/media
+      volumes:
+      - name: media-files
+        persistentVolumeClaim:
+          claimName: geargo-media-pvc

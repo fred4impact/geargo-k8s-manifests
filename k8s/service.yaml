@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: geargo-web
+  labels:
+    app: geargo
+    component: web
+spec:
+  selector:
+    app: geargo
+    component: web
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP

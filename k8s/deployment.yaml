@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geargo-web
+  labels:
+    app: geargo
+    component: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: geargo
+      component: web
+  template:
+    metadata:
+      labels:
+        app: geargo
+        component: web
+    spec:
+      containers:
+      - name: geargo-web
+        image: your-registry/geargo:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: DEBUG
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: SECRET_KEY
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            secretKeyRef:
+              name: geargo-django-secret
+              key: ALLOWED_HOSTS
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgresql:5432/$(POSTGRES_DB)"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_PASSWORD
+        - name: REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: CELERY_BROKER_URL
+          value: "redis://redis:6379/0"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://redis:6379/0"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: static-files
+          mountPath: /app/staticfiles
+        - name: media-files
+          mountPath: /app/media
+      volumes:
+      - name: static-files
+        emptyDir: {}
+      - name: media-files
+        persistentVolumeClaim:
+          claimName: geargo-media-pvc

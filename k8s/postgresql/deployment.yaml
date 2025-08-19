@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  labels:
+    app: geargo
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geargo
+      component: database
+  template:
+    metadata:
+      labels:
+        app: geargo
+        component: database
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: geargo-db-secret
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - geargo_user
+            - -d
+            - geargo_db
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - geargo_user
+            - -d
+            - geargo_db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgresql-data
+        persistentVolumeClaim:
+          claimName: postgresql-pvc

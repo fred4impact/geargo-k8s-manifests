@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: geargo-media-pvc
+  labels:
+    app: geargo
+    component: media
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can read/write
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard  # Change this based on your cluster's storage class

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: geargo-app
+
+resources:
+  # Application components
+  - deployment.yaml
+  - celery-deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - media-pvc.yaml
+  - hpa.yaml
+  - network-policy.yaml
+  
+  # Database
+  - postgresql/
+  
+  # Redis
+  - redis/
+
+commonLabels:
+  app: geargo
+  version: v1.0.0
+
+namespace: default

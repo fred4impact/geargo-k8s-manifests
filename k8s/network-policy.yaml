@@ -1,0 +1,56 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: geargo-network-policy
+  labels:
+    app: geargo
+spec:
+  podSelector:
+    matchLabels:
+      app: geargo
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  - from:
+    - podSelector:
+        matchLabels:
+          app: geargo
+          component: web
+    - podSelector:
+        matchLabels:
+          app: geargo
+          component: celery
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: geargo
+          component: database
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: geargo
+          component: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
